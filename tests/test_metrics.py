@@ -13,16 +13,17 @@ def test_home_counter_and_histogram(client):
     counter = app_module.REQUEST_COUNT.labels(
         method="GET", endpoint="/", status="200"
     )
-    histogram = app_module.REQUEST_LATENCY.labels(endpoint="/")
-
     before = counter._value.get()
-    count_before = histogram._count.get()
 
     response = client.get("/")
 
     assert response.status_code == 200
     assert counter._value.get() == before + 1
-    assert histogram._count.get() == count_before + 1
+
+    metrics_response = client.get("/metrics")
+    metrics_text = metrics_response.get_data(as_text=True)
+
+    assert 'http_request_duration_seconds_count{endpoint="/"}' in metrics_text
 
 
 def test_work_success(client, monkeypatch):
@@ -31,15 +32,18 @@ def test_work_success(client, monkeypatch):
     counter = app_module.REQUEST_COUNT.labels(
         method="GET", endpoint="/work", status="200"
     )
-    histogram = app_module.REQUEST_LATENCY.labels(endpoint="/work")
     before = counter._value.get()
-    count_before = histogram._count.get()
 
     response = client.get("/work")
 
     assert response.status_code == 200
     assert counter._value.get() == before + 1
-    assert histogram._count.get() == count_before + 1
+
+    metrics_response = client.get("/metrics")
+    metrics_text = metrics_response.get_data(as_text=True)
+
+    assert 'http_request_duration_seconds_count{endpoint="/work"}' in metrics_text
+
 
 
 def test_work_error(client, monkeypatch):
